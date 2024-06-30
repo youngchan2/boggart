@@ -36,13 +36,13 @@ class Experiment:
         
         segment_combos = []
         for minute in minutes:
-            chunk_starts = list(range(minute, minute+1800, self.chunk_size))
+            chunk_starts = list(range(minute, minute+180, self.chunk_size))
             segment_combos.append(chunk_starts)
         self.ingest_combos = list(product(_combos, segment_combos))
 
         segment_combos = []
         for minute in minutes:
-            chunk_starts = list(range(minute, minute+1800, self.chunk_size))
+            chunk_starts = list(range(minute, minute+180, self.chunk_size))
             for chunk_start in chunk_starts:
                 query_seg_starts = list(range(chunk_start, chunk_start+self.chunk_size, self.query_seg_size))
                 segment_combos.extend(list(product([chunk_start], query_seg_starts)))

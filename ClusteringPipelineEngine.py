@@ -11,12 +11,12 @@ from utils import parallelize_update_dictionary
 from QueryProcessor import QueryProcessor
 
 class ClusteringPipelineEngine:
-    def __init__(self, vid_label, bg_conf:BackgroundConfig=None, traj_conf:TrajectoryConfig=None, fps:int=30, query_conf=0.3, query_seg_size=1800, skip_no_traj=False):
+    def __init__(self, vid_label, bg_conf:BackgroundConfig=None, traj_conf:TrajectoryConfig=None, fps:int=30, query_conf=0.3, query_seg_size=180, skip_no_traj=False):
 
         self.vid_label = vid_label
 
         self.bg_conf = BackgroundConfig(peak_thresh=0.1) if bg_conf is None else bg_conf
-        self.traj_conf =  TrajectoryConfig(diff_thresh=16, chunk_size=1800, fps=fps) if traj_conf is None else traj_conf
+        self.traj_conf =  TrajectoryConfig(diff_thresh=16, chunk_size=180, fps=fps) if traj_conf is None else traj_conf
         assert self.traj_conf.fps == fps
 
         self.fps = fps
@@ -26,7 +26,7 @@ class ClusteringPipelineEngine:
 
         self.skip_no_traj = skip_no_traj
 
-        self.total_frames_per_hour = 60 * 60 * 30 # min/hour * sec/min * frames/sec
+        self.total_frames_per_hour = 60 * 30 # min/hour * sec/min * frames/sec
 
         self.mfs_sweep = [900, 450, 300, 200, 100, 50, 20, 10, 5, 2, 1, 0, -900, -300, -30, -10, -3, -2]
 

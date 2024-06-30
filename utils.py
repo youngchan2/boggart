@@ -9,9 +9,9 @@ import cv2
 import numpy as np
 from tqdm import tqdm, trange
 
-# import tensorflow as tf
-# tf.get_logger().setLevel('ERROR')
-# from object_detection.metrics import coco_evaluation
+import tensorflow as tf
+tf.get_logger().setLevel('ERROR')
+from object_detection.metrics import coco_evaluation
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' # to quiet tensorflow logging
 
@@ -126,13 +126,13 @@ def calculate_bbox_accuracy(model_a_dets, model_b_dets, prep_batch_only=False):
         "groundtruth_classes" : np.array([0 for _ in range(len(model_a_dets))], dtype=np.uint8)
     }
     
-    # evaluator = coco_evaluation.CocoDetectionEvaluator([{"id" : 0, "name" : ""}])
-    # evaluator.add_single_ground_truth_image_info(image_id="", groundtruth_dict=gt_dict)
-    # evaluator.add_single_detected_image_info(image_id="", detections_dict=det_dict)
-    # x = evaluator.evaluate()
-    # y = round(x['DetectionBoxes_Precision/mAP'], 3)
+    evaluator = coco_evaluation.CocoDetectionEvaluator([{"id" : 0, "name" : ""}])
+    evaluator.add_single_ground_truth_image_info(image_id="", groundtruth_dict=gt_dict)
+    evaluator.add_single_detected_image_info(image_id="", detections_dict=det_dict)
+    x = evaluator.evaluate()
+    y = round(x['DetectionBoxes_Precision/mAP'], 3)
 
-    # return y 
+    return y 
 
 @lru_cache(512)
 def calculate_count_accuracy(model_a_dets, model_b_dets):
