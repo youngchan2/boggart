@@ -29,6 +29,7 @@ pip install --upgrade protobuf
 pip show protobuf를 통해 설치된 경로를 찾아서 site-packages/google/protobuf/internal안에 있는 builder.py를 찾아서 따로 저장.
 pip install protobuf==3.19.5인가 암튼 기존 version으로 돌리기
 builder.py를 다시 site-packages/google/protobuf/internal에 넣어준다.
+export LD_PRELOAD=/home/nvidia/boggart/env/lib/python3.8/site-packages/scikit_learn.libs/libgomp-d22c30c5.so.1.0.0
 ```
 ## Data Setup Instructions
 ### Video Data Setup
