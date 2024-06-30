@@ -5,16 +5,18 @@ from ingest import IngestTimeProcessing
 from QueryProcessor import QueryProcessor
 from utils import parallelize_update_dictionary
 from VideoData import VideoData
+from ModelProcessor import ModelProcessor
 
 class Experiment:
 
-    def __init__(self, vid, hour, additional_sweeps=None, skips_qs_starts=[], skip_no_traj=False, chunk_size=1800, query_seg_size=1800):
+    def __init__(self, vid, hour, additional_sweeps=None, skips_qs_starts=[], skip_no_traj=False, chunk_size=180, query_seg_size=180):
         self.video_data = VideoData(
             db_vid = vid,
             hour = hour
         )
 
-        minutes = list(range(0, 60 * 1800, 1800))
+        minutes = list(range(0, 1800, chunk_size))
+        self.minutes = minutes
 
         param_sweeps = {
             "diff_thresh" : [16],
@@ -51,51 +53,17 @@ class Experiment:
         self.skip_no_traj = skip_no_traj
 
     def run_single_default(self, chunk_start):
-        bg_conf = BackgroundConfig(peak_thresh=0.1)
-        traj_conf = TrajectoryConfig(diff_thresh=16, chunk_size=1800, fps=30)
+        bg_conf = BackgroundConfig(peak_thresh=0.1, bg_dur = self.chunk_size)
+        traj_conf = TrajectoryConfig(diff_thresh=16, chunk_size=self.chunk_size, fps=30)
         e = IngestTimeProcessing(self.video_data, bg_conf, traj_conf)
         bg_start = e.bg_config.get_bg_start(chunk_start)
         e.generate_background(bg_start)
         e.run_tracker(chunk_start, True)
 
-    def _ingest_helper_fn(self, combo_idx):
-        vals = self.ingest_combos[combo_idx]
-
-        bg_conf = BackgroundConfig(peak_thresh=vals[0][self.sweep_param_keys.index("peak_thresh")])
-        traj_conf = TrajectoryConfig(diff_thresh=vals[0][self.sweep_param_keys.index("diff_thresh")], chunk_size=self.chunk_size, fps=vals[0][self.sweep_param_keys.index("fps")])
-        chunk_start = vals[1][0]
-        e = IngestTimeProcessing(self.video_data, bg_conf, traj_conf)
-        e.run_tracker(chunk_start, True)
-
-    def _query_helper_fn(self, combo_idx):
-        vals = self.query_combos[combo_idx]
-
-        bg_conf = BackgroundConfig(peak_thresh=vals[0][self.sweep_param_keys.index("peak_thresh")])
-        traj_conf = TrajectoryConfig(diff_thresh=vals[0][self.sweep_param_keys.index("diff_thresh")], chunk_size=self.chunk_size, fps=vals[0][self.sweep_param_keys.index("fps")])
-        chunk_start, query_seg_start = vals[1]
-
-        qtype = vals[0][self.sweep_param_keys.index("query_type")]
-        model = vals[0][self.sweep_param_keys.index("model")]
-        qclass = vals[0][self.sweep_param_keys.index("query_class")]
-        qconf = vals[0][self.sweep_param_keys.index("query_conf")]
-        mfs = vals[0][self.sweep_param_keys.index("mfs_approach")]
-        ioda = vals[0][self.sweep_param_keys.index("ioda")]
-
-        if query_seg_start in self.skips_qs_starts:
-            return None
-        qp = QueryProcessor(qtype, self.video_data, model, qclass, qconf, mfs, bg_conf, traj_conf, ioda, self.query_seg_size)
-        return qp.execute(chunk_start, query_seg_start, check_only=False, get_results_df=True) 
-
     def run_ingest(self):
         try:
-            res = parallelize_update_dictionary(self._ingest_helper_fn, range(len(self.ingest_combos)), total_cpus=70, max_workers=15)
-            return res
-        except Exception as e:
-            print("FAILED AT ", e)
-
-    def run_query(self):
-        try:
-            res = parallelize_update_dictionary(self._query_helper_fn, range(len(self.query_combos)), total_cpus=70, max_workers=15)
-            return res
+            for start in self.minutes:
+                self.run_single_default(start)
+            return 1
         except Exception as e:
             print("FAILED AT ", e)

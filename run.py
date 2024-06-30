@@ -3,32 +3,35 @@ from ClusteringPipelineEngine import ClusteringPipelineEngine
 from Experiment import Experiment
 from VideoData import VideoData
 
-vid = "auburn_first_angle"
+# vid = "lausanne_pont_bassieres"
+vid = "auburn_first_angle_kyc"
 hours = list(range(10,11))
+chunk_size = 180
+query_seg_size = 180
 
 ### AHEAD-OF-TIME PROCESSING ###
 # This is done once per video
 for hr in hours:
-    VideoData(vid, hr).check_vids()
-    Experiment(vid, hr).run_ingest()
+    # VideoData(vid, hr).check_vids()
+    Experiment(vid = vid, hour = hr, chunk_size = chunk_size, query_seg_size = query_seg_size).run_ingest()
 
 
 # QUERY-TIME PROCESSING ###
 # This is done once per query
 
 query_class = "car"
-model = "yolov3-coco"
+model = "yolov5"
 acc_target = 0.9
 query_conf = 0.7
-qtype = "binary"
+qtype = "bbox"
 pc = 0.1
 
-# convert query_class name to the corresponding index
+# # convert query_class name to the corresponding index
 qclass_label = {"car" : 2, "person": 0}[query_class] # coco
 
 cpe = ClusteringPipelineEngine(vid, query_conf=query_conf)
 results_df = cpe.execute(hours, qtype, model, qclass_label, acc_target, percent_clusters=pc, ioda=0.1, get_boggart_results=True)
-
+print(results_df)
 # Results of boggart are located in results_df
 
 # If bounding box query,

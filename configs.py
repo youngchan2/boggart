@@ -1,7 +1,7 @@
 import os
 
 # location of boggart repository
-BOGGART_REPO_PATH = "/home/neil/boggart"
+BOGGART_REPO_PATH = "/home/nvidia/boggart"
 main_dir = f"{BOGGART_REPO_PATH}/data/"
 
 assert os.path.exists(BOGGART_REPO_PATH), "Update Boggart Repository Path in configs.py"
@@ -31,7 +31,7 @@ video_files_dir = f"{{video_dir}}video/"
 crops = {
     # this is what you DON'T WANT!
     # vname : {class_id : [x1, y1, x2, y2]} where x1, y1 top left
-    "auburn_first_angle" : {
+    "auburn_first_angle_kyc" : {
         "person" : [0, 0, 1920, 400],
         "car" : [0, 0, 1920, 500],
         "bicycle" : [0, 0, 1920, 500],
@@ -40,16 +40,16 @@ crops = {
 }
 
 frame_bounds = {
-    "auburn_first_angle": [1080, 1920],
+    "auburn_first_angle_kyc": [1080, 1920],
 }
 
 class BackgroundConfig:
-    def __init__(self, peak_thresh):
+    def __init__(self, peak_thresh, bg_dur = 180):
         self.peak_thresh : int = peak_thresh
         self.sample_rate : int = 30
         self.box_length : int = 2
         self.quant : int = 16
-        self.bg_dur : int = 1800
+        self.bg_dur : int = bg_dur
 
     def get_bg_dir(self, video_dir):
         return background_dir.format(video_dir=video_dir)

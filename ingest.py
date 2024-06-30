@@ -191,6 +191,7 @@ class IngestTimeProcessing:
         bg_max, bg_max2 = _temp_bg
 
         frame_generator = self.vd.get_frames_by_bounds(chunk_start, chunk_start+self.traj_config.chunk_size, int(30/self.traj_config.fps))
+        
         for i in trange(chunk_start, chunk_start+self.traj_config.chunk_size, int(30/self.traj_config.fps), leave=False, desc=f"{chunk_start}_{self.traj_config.chunk_size}"):
             f = next(frame_generator)
             if f is None:
