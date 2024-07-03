@@ -105,11 +105,11 @@ Instructions to execute Boggart's ahead-of-time and query-time processing can be
 
 ### 방식
 사용하는 video 달라질 경우
-`Detection.py`의 `vid`, `hour`, `minutes` 변경
-`VideoData.py`의 `stored_dur` 변경
-`Experiment.py`의 `minute` 변경
-`ClusteringPipelineEngine.py`의 `total_frames_per_hour` 변경
-`load_detections_into_mongodb.py`의 `video_name`, `hour`, `range` 변경
+`Detection.py`의 `vid`, `hour`, `minutes` 변경  
+`VideoData.py`의 `stored_dur` 변경  
+`Experiment.py`의 `minute` 변경  
+`ClusteringPipelineEngine.py`의 `total_frames_per_hour` 변경  
+`load_detections_into_mongodb.py`의 `video_name`, `hour`, `range` 변경  
 `run.py`의 `vid`, `hours` 변경
 
 `Boggart`
