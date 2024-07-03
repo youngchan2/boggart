@@ -4,3 +4,8 @@ data/
 hwang/
 models/
 inference_results/
+centroid_frame_png/
+centroid_result/
+centroid_video/
+frame/
+inference_results/

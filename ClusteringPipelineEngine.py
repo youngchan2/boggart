@@ -2,6 +2,7 @@ from operator import itemgetter
 
 import numpy as np
 import pandas as pd
+import os
 from tqdm import tqdm
 
 from configs import BackgroundConfig, TrajectoryConfig
@@ -11,12 +12,12 @@ from utils import parallelize_update_dictionary
 from QueryProcessor import QueryProcessor
 
 class ClusteringPipelineEngine:
-    def __init__(self, vid_label, bg_conf:BackgroundConfig=None, traj_conf:TrajectoryConfig=None, fps:int=30, query_conf=0.3, query_seg_size=180, skip_no_traj=False):
+    def __init__(self, vid_label, bg_conf:BackgroundConfig=None, traj_conf:TrajectoryConfig=None, fps:int=30, query_conf=0.3, query_seg_size=150, skip_no_traj=False):
 
         self.vid_label = vid_label
 
         self.bg_conf = BackgroundConfig(peak_thresh=0.1) if bg_conf is None else bg_conf
-        self.traj_conf =  TrajectoryConfig(diff_thresh=16, chunk_size=180, fps=fps) if traj_conf is None else traj_conf
+        self.traj_conf =  TrajectoryConfig(diff_thresh=16, chunk_size=150, fps=fps) if traj_conf is None else traj_conf
         assert self.traj_conf.fps == fps
 
         self.fps = fps
@@ -26,9 +27,10 @@ class ClusteringPipelineEngine:
 
         self.skip_no_traj = skip_no_traj
 
-        self.total_frames_per_hour = 60 * 30 # min/hour * sec/min * frames/sec
+        self.total_frames_per_hour = 60 * 30
 
-        self.mfs_sweep = [900, 450, 300, 200, 100, 50, 20, 10, 5, 2, 1, 0, -900, -300, -30, -10, -3, -2]
+        # self.mfs_sweep = [900, 450, 300, 200, 100, 50, 20, 10, 5, 2, 1, 0, -900, -300, -30, -10, -3, -2]
+        self.mfs_sweep = [self.query_seg_size]
 
         self.all_vecs = None
         self._all_vecs = None
@@ -88,7 +90,7 @@ class ClusteringPipelineEngine:
         _, clusters, centroids, _, _ = IngestTimeProcessing.cluster_profile(self.all_vecs.copy(), n_clusters=n_clusters)
         # print(f"all vecs: {self.all_vecs}")
         # print(f"all vecs len: {len(self.all_vecs)}")
-        # print(f"all dfs: {self.all_dfs}")
+        print(f"all dfs: {self.all_dfs}")
         print(f"clusters:{clusters}")
         # print(f"len clusters:{len(clusters)}")
         print(f"centroids:{centroids}")
@@ -97,9 +99,21 @@ class ClusteringPipelineEngine:
             clusters[centroids] = list(range(n_clusters))
 
         self.all_dfs["cluster"] = clusters
-
+        # cluster centroid data frame
         centroids_df = self.all_dfs.loc[centroids].copy()
-        print(centroids_df)
+        
+        centroids_csv = centroids_df.copy()
+        # for i in range(len(centroids)):
+        #     centroids_csv["chunk_num"] = centroids[i]
+        centroids_csv = centroids_csv[["seg_start", "chunk_start", "cluster"]]
+        # print(centroids_df)
+        centroid_result_dir = './centroid_result'
+        centroid_result_file = f'centroids_{self.vid_label}.csv'
+        filepath = os.path.join(centroid_result_dir, centroid_result_file)
+        if not os.path.exists(centroid_result_dir):
+            os.makedirs(centroid_result_dir)
+            
+        centroids_csv.to_csv(filepath)
 
         mfs_sweep_index = 0
         sweep_chunk_length = 8
@@ -109,7 +123,7 @@ class ClusteringPipelineEngine:
         full_df = None
 
         # mfs_approach == max_distance
-        # target accuracy에 맞는 mfs_approach값 찾는 과정
+        # target accuracy에 맞는 mfs_approach값 찾는 과정 => chunk size (=query size) 150으로 고정
         # centroid에 query를 진행하여 mfs_approach값 찾고, 찾는 mfs_approach는 같은 cluster의 모든 chunk에 동일하게 적용
         while len(centroids_df) > 0:
 
@@ -120,7 +134,7 @@ class ClusteringPipelineEngine:
                 for mfs in self.mfs_sweep[mfs_sweep_index * sweep_chunk_length : (mfs_sweep_index + 1) * sweep_chunk_length]:
                     qp = QueryProcessor(query_type, vd, model, query_class, self.query_conf, mfs, self.bg_conf, self.traj_conf, ioda, self.query_seg_size)
                     centroid_qps.append([chunk_start, query_seg_start, qp])
-
+            print(f'centroid qps {centroid_qps}')
             # run query about centroid chunks
             if len(centroid_qps) > 0:
                 self.qp_sweep = centroid_qps
@@ -165,12 +179,16 @@ class ClusteringPipelineEngine:
         remaining_query_results = parallelize_update_dictionary(self._sweep_helper, range(len(remaining_qps)), total_cpus=4, max_workers=1)
         self.qp_sweep = None
 
-        _tempDF = list(map(itemgetter(1), sorted(remaining_query_results.items())))
-        remaining_query_results = pd.concat(_tempDF).reset_index().drop(columns="index")
+        if not len(remaining_qps) == 0:
+            _tempDF = list(map(itemgetter(1), sorted(remaining_query_results.items())))
+            remaining_query_results = pd.concat(_tempDF).reset_index().drop(columns="index")
 
-        mfs = remaining_query_results.min_frames.sum() + len(centroids) * self.query_seg_size * self.fps / 30
-        # Final results
-        full_results = pd.concat([full_df, remaining_query_results]).sort_values(["hour", "seg_start"]).reset_index().drop(columns="index")
+            mfs = remaining_query_results.min_frames.sum() + len(centroids) * self.query_seg_size * self.fps / 30
+            # Final results
+            full_results = pd.concat([full_df, remaining_query_results]).sort_values(["hour", "seg_start"]).reset_index().drop(columns="index")
+        else:
+            full_results = full_df
+
         print(full_results)
         score = np.round(full_results.score.mean(), 4)
 

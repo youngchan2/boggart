@@ -37,14 +37,35 @@ crops = {
         "bicycle" : [0, 0, 1920, 500],
         "truck" : [0, 0, 1920, 500]
     },
+    "auburn_first_angle10_kyc" : {
+        "person" : [0, 0, 1920, 400],
+        "car" : [0, 0, 1920, 500],
+        "bicycle" : [0, 0, 1920, 500],
+        "truck" : [0, 0, 1920, 500]
+    },
+    "auburn_first_angle10_crf23_kyc" : {
+        "person" : [0, 0, 1920, 400],
+        "car" : [0, 0, 1920, 500],
+        "bicycle" : [0, 0, 1920, 500],
+        "truck" : [0, 0, 1920, 500]
+    },
+    "auburn_first_angle60_crf23_kyc" : {
+        "person" : [0, 0, 1920, 400],
+        "car" : [0, 0, 1920, 500],
+        "bicycle" : [0, 0, 1920, 500],
+        "truck" : [0, 0, 1920, 500]
+    }
 }
 
 frame_bounds = {
     "auburn_first_angle_kyc": [1080, 1920],
+    "auburn_first_angle10_kyc": [1080, 1920],
+    "auburn_first_angle10_crf23_kyc": [1080, 1920],
+    "auburn_first_angle60_crf23_kyc": [1080, 1920],
 }
 
 class BackgroundConfig:
-    def __init__(self, peak_thresh, bg_dur = 180):
+    def __init__(self, peak_thresh, bg_dur = 150):
         self.peak_thresh : int = peak_thresh
         self.sample_rate : int = 30
         self.box_length : int = 2
