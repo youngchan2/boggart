@@ -9,9 +9,9 @@ from db_model import DetectionResult, Frame
 from utils import parallelize_update_dictionary
 # from ground_truth_yolo import ml_model, video_name, hour, csv_path
 
-video_name = "auburn_first_angle_kyc"
+video_name = "auburn_ss2_crf23_kyc"
 ml_model = "yolov5"
-hour = 10
+hour = 60
 csv_path = f"{BOGGART_REPO_PATH}/inference_results/{ml_model}/{video_name}/{video_name}{hour}.csv"
 
 def exec(frame_start, num_frames=900):
@@ -56,4 +56,4 @@ def exec(frame_start, num_frames=900):
 
 
 assert os.path.exists(csv_path)
-parallelize_update_dictionary(exec, range(0, 1800, 900), max_workers=1, total_cpus=4)
+parallelize_update_dictionary(exec, range(0, 1800, 150), max_workers=1, total_cpus=4)

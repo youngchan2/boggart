@@ -34,26 +34,27 @@ def accuracy(chunk_start):
     # print(f"chunk start {chunk_start}")
     scores = []
     rates = []
-    gt_bboxes = get_gt("auburn_first_angle_kyc", 10, "yolov5", chunk_start)
-    det_bboxes = get_gt("auburn_first_angle60_crf23_kyc", 60, "yolov5", chunk_start)
+    gt_bboxes = get_gt("auburn_ss2_kyc", 60, "yolov5", chunk_start, extract_frame=False)
+    det_bboxes = get_gt("auburn_ss2_crf23_kyc", 60, "yolov5", chunk_start)
 
-    video_bitrate = create_centroid_video("auburn_first_angle_kyc", 10, chunk_start)
+    # video_bitrate = create_centroid_video("auburn_ss2_kyc", 60, chunk_start)
 
     for bbox_gt, sr in zip(gt_bboxes, det_bboxes):
         scores.append(calculate_bbox_accuracy(bbox_gt, sr))
 
-    rates.append(video_bitrate)
+    # rates.append(video_bitrate)
 
-    return {"scores": scores}, {"rates": rates}
+    # return {"scores": scores}, {"rates": rates}
+    return {"scores": scores}
 
 total_scores = []
 total_rates = []
-vid_name = "auburn_first_angle_kyc"
+vid_name = "auburn_ss2_kyc"
 centroid_reslut = f'./centroid_result/centroids_{vid_name}.csv'
 df = pd.read_csv(centroid_reslut)
 seg_start_values = df['seg_start']
 seg_start_list = seg_start_values.tolist()
-
+print(seg_start_list)
 start_bytes = get_network_bytes()
 start_time = time.time()
 
@@ -64,8 +65,12 @@ end_time = time.time()
 
 bitrate = ((end_bytes - start_bytes))
 
-for ts, (score,rate) in scores_dict.items():
-     total_scores.extend(score["scores"])
-     total_rates.extend(rate["rates"])
+# for ts, (score,rate) in scores_dict.items():
+#      total_scores.extend(score["scores"])
+    #  total_rates.extend(rate["rates"])
 
-print(f"score: {round(np.mean(np.array(total_scores)), 4)}, bitrate: {round(np.mean(np.array(total_rates)), 4)}")
+for ts, score in scores_dict.items():
+     total_scores.extend(score["scores"])
+
+# print(f"score: {round(np.mean(np.array(total_scores)), 4)}, bitrate: {round(np.mean(np.array(total_rates)), 4)}")
+print(f"score: {round(np.mean(np.array(total_scores)), 4)}")

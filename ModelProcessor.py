@@ -50,7 +50,7 @@ class ModelProcessor:
                 
                 assert score <= 1
                 assert type(pred_class) is not float
-
+                
                 if score >= self.query_conf and pred_class == self.class_label:
                     toss = False
                     if self.crop_region is not None:
@@ -63,7 +63,7 @@ class ModelProcessor:
                         else:
                             curr_boxes.append(det)
                         curr_counts += 1
-
+            # print(f'numb {elem.frame_no} count {curr_counts}')
             gt_boxes.append(curr_boxes)
             gt_counts.append(curr_counts)
 

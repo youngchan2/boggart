@@ -47,15 +47,16 @@ def accuracy(chunk_start):
     det_bboxes = get_gt("auburn_first_angle60_crf23_kyc", 60, "yolov5", chunk_start)
     # print(f"gt:{gt_bboxes}")
     # print(f"dt:{det_bboxes}")
-    video_bitrate = encoding("auburn_first_angle_kyc", 10, chunk_start)
+    # video_bitrate = encoding("auburn_first_angle_kyc", 10, chunk_start)
 
     # bounding box accuracy
     for bbox_gt, sr in zip(gt_bboxes, det_bboxes):
         scores.append(calculate_bbox_accuracy(bbox_gt, sr))
         # print(scores)
-    rates.append(video_bitrate)
+    # rates.append(video_bitrate)
 
-    return {"scores": scores}, {"rates": rates}
+    # return {"scores": scores}, {"rates": rates}
+    return {"scores": scores}
 
 def encoding(video_name, hour, query_start, query_size = 150, fps = 30):
     vd = VideoData(video_name, hour)
@@ -99,11 +100,17 @@ end_bytes = get_network_bytes()
 end_time = time.time()
 
 bitrate = ((end_bytes - start_bytes))
-for ts, (score, rate) in scores_dict.items():
-    total_scores.extend(score["scores"])
-    total_rates.extend(rate["rates"])
 
-print(f"score: {round(np.mean(np.array(total_scores)), 4)}, bitrate: {round(np.mean(np.array(total_rates)), 4)}")
+for ts, score in scores_dict.items():
+    total_scores.extend(score["scores"])
+
+print(f"score: {round(np.mean(np.array(total_scores)), 4)}")
+
+# for ts, (score, rate) in scores_dict.items():
+#     total_scores.extend(score["scores"])
+#     total_rates.extend(rate["rates"])
+
+# print(f"score: {round(np.mean(np.array(total_scores)), 4)}, bitrate: {round(np.mean(np.array(total_rates)), 4)}")
 
 
 # gt_bboxess = get_gt("auburn_first_angle", 10, "yolov5", 0)

@@ -2,18 +2,22 @@ import os
 import cv2
 from configs import video_directory, frame_bounds, video_files_dir
 
+
 class NoMoreVideo(Exception):
     pass
 
+
 class VideoData:
 
-    stored_dur = 1800
+    # stored_dur = 300
 
     def __init__(self, db_vid, hour, vid_label=None):
-        self.db_vid    : str = db_vid
-        self.hour      : int = hour
-        self.vid_label : str = vid_label if vid_label is not None else db_vid
-        self.video_dir = video_directory.format(vid_label=self.vid_label, hour=self.hour)
+        self.db_vid: str = db_vid
+        self.hour: int = hour
+        self.vid_label: str = vid_label if vid_label is not None else db_vid
+        self.video_dir = video_directory.format(
+            vid_label=self.vid_label, hour=self.hour
+        )
         self.video_files_dir = video_files_dir.format(video_dir=self.video_dir)
         self.vname_ts = f"{self.video_files_dir}{self.vid_label}{hour}.ts"
         os.makedirs(self.video_files_dir, exist_ok=True)
@@ -26,7 +30,7 @@ class VideoData:
         return f"{self.video_files_dir}{self.vid_label}{self.hour}_{idx}.mp4"
 
     def get_frame_bounds(self):
-        return frame_bounds[self.vid_label] # [height, width]
+        return frame_bounds[self.vid_label]  # [height, width]
 
     # def get_frames_by_bounds(self, start, stop, skip=1):
 
@@ -67,7 +71,7 @@ class VideoData:
 
         # 총 프레임 수
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        
+
         if start >= total_frames:
             raise NoMoreVideo
         elif start < 0 or stop > total_frames or start > stop:
@@ -76,7 +80,7 @@ class VideoData:
 
         # 시작 프레임으로 이동
         cap.set(cv2.CAP_PROP_POS_FRAMES, start)
-        
+
         current_frame = start
         while current_frame < stop:
             ret, frame = cap.read()
@@ -84,7 +88,7 @@ class VideoData:
                 break
             yield frame
             current_frame += 1
-        
+
         cap.release()
 
     # def check_vids(self):

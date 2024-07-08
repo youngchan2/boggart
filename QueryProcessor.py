@@ -1,6 +1,7 @@
 import os
 import json
 import pickle
+import cv2
 from collections import defaultdict
 from operator import itemgetter
 
@@ -19,7 +20,7 @@ class QueryProcessor:
 
     def __init__(self, query_type, video_data, model, query_class, query_conf, mfs_approach, bg_conf, traj_conf, ioda, query_segment_size):
         self.query_type = query_type
-        self.video_data = video_data
+        self.video_data: VideoData = video_data
         self.fps = traj_conf.fps
         self.modelProcessor: ModelProcessor = ModelProcessor(model, video_data, query_class, query_conf, self.fps)
         self.mfs_approach = mfs_approach
@@ -139,6 +140,7 @@ class QueryProcessor:
         temp_dict = dict()              # frame no -> [traj ids that it covers + [-1] * reward if frame near thresh]
 
         for k in set(data.keys()).intersection(set(trajs_by_frames.keys())):
+            # print(f'propagate bound k: {k} min: {k-thresh} max: {k-thresh}')
             for t in set(trajs_by_frames[k]):
                 add_amt = list([t for i in trajs[t] if k-thresh <= i <= k + thresh])
                 if len(add_amt) > 0:
@@ -247,6 +249,32 @@ class QueryProcessor:
         with open(boggart_results_fname, "r") as f:
             return json.load(f)
 
+    def _extract_min_frame_set(self, mfs, query_segment_start, query_segment_size=150):        
+        vd = self.video_data
+        mfs_list = list(mfs)
+        mfs_path = f'./min_frame/{vd.vid_label}/'
+        # min_frame_num_path = f'./mfs_result/{query_segment_start}/{vd.vid_label}{query_segment_start}.csv'
+        min_frame_num_path = f'./mfs_result/{vd.vid_label}/{vd.vid_label}{vd.hour}.csv'
+        os.makedirs(mfs_path, exist_ok=True)
+        os.makedirs(os.path.dirname(min_frame_num_path), exist_ok=True)
+        
+        frame_generator = vd.get_frames_by_bounds(query_segment_start, query_segment_start+query_segment_size)
+
+        for idx, frame in enumerate(frame_generator):
+            frame_num = idx + query_segment_start
+            for i in mfs_list:
+                if frame_num == i:
+                    frame_path = os.path.join(mfs_path, f'frame_{frame_num:04d}.png')
+                    cv2.imwrite(frame_path, frame)
+
+        df = pd.DataFrame(mfs_list)
+        df.to_csv(min_frame_num_path, mode="a",index=False, header=False)
+
+        if os.path.isfile(min_frame_num_path):
+            df_sort = pd.read_csv(min_frame_num_path, header=None)
+            df_sort = df_sort.sort_values(by=0)
+            df_sort.to_csv(min_frame_num_path, index=False, header=False)
+
     # return None if no video for this minute...
     def execute(self, chunk_start, query_segment_start, check_only=True, get_results_df=False, get_mfs=False):
 
@@ -290,6 +318,16 @@ class QueryProcessor:
 
         else:
             min_frames_set = self.get_min_frame_set(mot_results.copy(), query_segment_start)
+            mfs_dir = f'./mfs_result'
+            mfs_file = f'{self.video_data.vid_label}{self.video_data.hour}.csv'
+            mfs_path = os.path.join(mfs_dir, mfs_file)
+            if not os.path.exists(mfs_dir):
+                os.makedirs(mfs_dir)
+            print('min frame')
+            print(list(min_frames_set))
+
+            self._extract_min_frame_set(min_frames_set, query_segment_start, self.query_segment_size)
+
             mfs_dets = [(frame_no, gt_bboxes[int((frame_no-query_segment_start) * self.fps/30)]) for frame_no in min_frames_set]
             return_dictionary["mfs_size"] = len(mfs_dets)
 

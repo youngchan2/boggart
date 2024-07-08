@@ -1,37 +1,34 @@
-from VideoData import VideoData
 import cv2
 import os
 import subprocess
-import psutil
-import time
 import pandas as pd
 
-# def create_centroid_video(video_name, hour, query_segment_start, query_segment_size = 150, fps = 30):
-#     vd = VideoData(video_name, hour)
+def get_frames_by_bounds(self, start, stop, skip=1):
+        cap = cv2.VideoCapture(self.vname_chunked(0))
+        # if not cap.isOpened():
+        #     raise NoMoreVideo
 
-#     # frame_generator = vd.get_frames_by_bounds(query_segment_start, query_segment_start+query_segment_size)
+        # 총 프레임 수
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-#     frame_path = f'./centroid_frame_png/{video_name}/{query_segment_start}'
-#     output_video_dir = f'./centroid_video/{video_name}'
-#     os.makedirs(output_video_dir, exist_ok=True)
-#     output_video_path = os.path.join(output_video_dir, f"centroid_{video_name}{query_segment_start}.mp4")
-                 
-#     command = ['ffmpeg', 
-#                '-framerate', str(fps), 
-#                '-start_number', str(query_segment_start),
-#                '-i', os.path.join(frame_path, 'frame_%04d.png'), 
-#                '-c:v', 'libx264', '-pix_fmt', 'yuv420p', 
-#                output_video_path
-#                ]
+        # if start >= total_frames:
+        #     raise NoMoreVideo
+        # elif start < 0 or stop > total_frames or start > stop:
+        #     print("Error: Invalid frame range.")
+        #     return
 
-#     subprocess.run(command, check=True)
-    
-#     bitrate = get_video_bitrate(output_video_path)
-#     return bitrate
+        # 시작 프레임으로 이동
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start)
 
-# def get_network_bytes():
-#     net_io = psutil.net_io_counters()
-#     return net_io.bytes_sent + net_io.bytes_recv
+        current_frame = start
+        while current_frame < stop:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            yield frame
+            current_frame += 1
+
+        cap.release()
 
 def create_mfs_video(video_name, hour, fps=30, preset='veryfast'):
     mfs_result_path = f'./mfs_result/{video_name}/{video_name}{hour}.csv'
@@ -78,13 +75,3 @@ mfs_video_path = create_mfs_video(vid, hours)
 bitrate = get_video_bitrate(mfs_video_path)
 kbyterate = (bitrate/8)/1024
 print(f'bitrate {vid}:{kbyterate}')
-
-# vd = VideoData("auburn_first_angle_kyc", 10)
-# frame_generator = vd.get_frames_by_bounds(0, 1800)
-
-# output_dir = f'./frame/'
-# os.makedirs(output_dir, exist_ok=True)
-
-# for idx, frame in enumerate(frame_generator):
-#     frame_filename = os.path.join(output_dir, f'frame_{idx:04d}.png')
-#     cv2.imwrite(frame_filename, frame)

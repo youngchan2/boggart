@@ -85,8 +85,8 @@ class ClusteringPipelineEngine:
         self.all_vecs = self._all_vecs.copy()
         self.all_dfs = self._all_dfs.copy()
 
-        n_clusters = max(2, int(percent_clusters * len(self.all_vecs)))
-
+        n_clusters = max(6, int(percent_clusters * len(self.all_vecs)))
+        # centroid 결정
         _, clusters, centroids, _, _ = IngestTimeProcessing.cluster_profile(self.all_vecs.copy(), n_clusters=n_clusters)
         # print(f"all vecs: {self.all_vecs}")
         # print(f"all vecs len: {len(self.all_vecs)}")
@@ -124,7 +124,7 @@ class ClusteringPipelineEngine:
 
         # mfs_approach == max_distance
         # target accuracy에 맞는 mfs_approach값 찾는 과정 => chunk size (=query size) 150으로 고정
-        # centroid에 query를 진행하여 mfs_approach값 찾고, 찾는 mfs_approach는 같은 cluster의 모든 chunk에 동일하게 적용
+        # centroid에 대해서만 query를 진행하여 mfs_approach값 찾고, 찾는 mfs_approach는 같은 cluster의 모든 chunk에 동일하게 적용
         while len(centroids_df) > 0:
 
             centroid_qps = []
@@ -134,7 +134,7 @@ class ClusteringPipelineEngine:
                 for mfs in self.mfs_sweep[mfs_sweep_index * sweep_chunk_length : (mfs_sweep_index + 1) * sweep_chunk_length]:
                     qp = QueryProcessor(query_type, vd, model, query_class, self.query_conf, mfs, self.bg_conf, self.traj_conf, ioda, self.query_seg_size)
                     centroid_qps.append([chunk_start, query_seg_start, qp])
-            print(f'centroid qps {centroid_qps}')
+
             # run query about centroid chunks
             if len(centroid_qps) > 0:
                 self.qp_sweep = centroid_qps

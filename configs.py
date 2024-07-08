@@ -54,7 +54,19 @@ crops = {
         "car" : [0, 0, 1920, 500],
         "bicycle" : [0, 0, 1920, 500],
         "truck" : [0, 0, 1920, 500]
-    }
+    },
+    "auburn_ss2_kyc" : {
+        "person" : [0, 0, 1920, 400],
+        "car" : [0, 0, 1920, 500],
+        "bicycle" : [0, 0, 1920, 500],
+        "truck" : [0, 0, 1920, 500]
+    },
+    "auburn_ss2_crf23_kyc" : {
+        "person" : [0, 0, 1920, 400],
+        "car" : [0, 0, 1920, 500],
+        "bicycle" : [0, 0, 1920, 500],
+        "truck" : [0, 0, 1920, 500]
+    },
 }
 
 frame_bounds = {
@@ -62,6 +74,8 @@ frame_bounds = {
     "auburn_first_angle10_kyc": [1080, 1920],
     "auburn_first_angle10_crf23_kyc": [1080, 1920],
     "auburn_first_angle60_crf23_kyc": [1080, 1920],
+    "auburn_ss2_kyc": [1080, 1920],
+    "auburn_ss2_crf23_kyc": [1080, 1920],
 }
 
 class BackgroundConfig:
