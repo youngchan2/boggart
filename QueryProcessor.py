@@ -1,6 +1,7 @@
 import os
 import json
 import pickle
+import re
 import cv2
 from collections import defaultdict
 from operator import itemgetter
@@ -22,6 +23,11 @@ class QueryProcessor:
         self.query_type = query_type
         self.video_data: VideoData = video_data
         self.fps = traj_conf.fps
+
+        # vd_label = video_data.vid_label
+        # if re.search(r'_qp\d+', vd_label):
+        #     gt_label: str = re.sub(r'_qp\d{1, 2}', '',vd_label)
+        #     video_data.vid_label = gt_label
         self.modelProcessor: ModelProcessor = ModelProcessor(model, video_data, query_class, query_conf, self.fps)
         self.mfs_approach = mfs_approach
         self.ioda = ioda
@@ -249,31 +255,32 @@ class QueryProcessor:
         with open(boggart_results_fname, "r") as f:
             return json.load(f)
 
-    def _extract_min_frame_set(self, mfs, query_segment_start, query_segment_size=150):        
+    def _save_mfs_by_sweep(self, mfs, query_segment_start):        
         vd = self.video_data
         mfs_list = list(mfs)
         mfs_path = f'./min_frame/{vd.vid_label}/'
         # min_frame_num_path = f'./mfs_result/{query_segment_start}/{vd.vid_label}{query_segment_start}.csv'
-        min_frame_num_path = f'./mfs_result/{vd.vid_label}/{vd.vid_label}{vd.hour}.csv'
+        min_frame_num_path = f'./mfs_result/{vd.vid_label}/{query_segment_start}_{self.mfs_approach}.csv'
         os.makedirs(mfs_path, exist_ok=True)
         os.makedirs(os.path.dirname(min_frame_num_path), exist_ok=True)
         
-        frame_generator = vd.get_frames_by_bounds(query_segment_start, query_segment_start+query_segment_size)
+        # frame_generator = vd.get_frames_by_bounds(query_segment_start, query_segment_start+query_segment_size)
 
-        for idx, frame in enumerate(frame_generator):
-            frame_num = idx + query_segment_start
-            for i in mfs_list:
-                if frame_num == i:
-                    frame_path = os.path.join(mfs_path, f'frame_{frame_num:04d}.png')
-                    cv2.imwrite(frame_path, frame)
+        # for idx, frame in enumerate(frame_generator):
+        #     frame_num = idx + query_segment_start
+        #     for i in mfs_list:
+        #         if frame_num == i:
+        #             frame_path = os.path.join(mfs_path, f'frame_{frame_num:04d}.png')
+        #             cv2.imwrite(frame_path, frame)
 
         df = pd.DataFrame(mfs_list)
         df.to_csv(min_frame_num_path, mode="a",index=False, header=False)
 
         if os.path.isfile(min_frame_num_path):
             df_sort = pd.read_csv(min_frame_num_path, header=None)
+            df_sort = df_sort.drop_duplicates()
             df_sort = df_sort.sort_values(by=0)
-            df_sort.to_csv(min_frame_num_path, index=False, header=False)
+            df_sort.to_csv(min_frame_num_path, index=False, header=['frame_num'])
 
     # return None if no video for this minute...
     def execute(self, chunk_start, query_segment_start, check_only=True, get_results_df=False, get_mfs=False):
@@ -293,6 +300,7 @@ class QueryProcessor:
         trajectories_df = self.get_tracking_info(chunk_start, query_segment_start)
         if type(trajectories_df) is not pd.core.frame.DataFrame and trajectories_df == -1:
             return None
+        # ground truth 값 가져옴 => 아래에서 accuracy 계산하기 위해
         gt_bboxes, gt_counts = self.modelProcessor.get_ground_truth(query_segment_start, query_segment_start + self.query_segment_size)
         return_dictionary["gt_bboxes"] = gt_bboxes
         # print(f"gt bboxes:{gt_bboxes}")
@@ -326,7 +334,7 @@ class QueryProcessor:
             print('min frame')
             print(list(min_frames_set))
 
-            self._extract_min_frame_set(min_frames_set, query_segment_start, self.query_segment_size)
+            self._save_mfs_by_sweep(min_frames_set, query_segment_start)
 
             mfs_dets = [(frame_no, gt_bboxes[int((frame_no-query_segment_start) * self.fps/30)]) for frame_no in min_frames_set]
             return_dictionary["mfs_size"] = len(mfs_dets)
@@ -337,6 +345,7 @@ class QueryProcessor:
 
             markers = self._prep_bounds(key_frame_info, query_segment_start, self.query_segment_size)
 
+            # query 실행 부분
             if self.query_type in ["count", "binary"]:
                 results_data = self.execute_count(markers, key_frame_info, mot_results)
             else:
@@ -349,6 +358,7 @@ class QueryProcessor:
             # return_dictionary["distances"] = results_data["distances"]
 
         # a bit messy implementation because want to avoid duplicate work for count/binary
+        # ------------------- bbox -------------------
         if self.query_type == "bbox":
             return_dictionary["query_results"] = query_results
             scores = []
@@ -361,10 +371,13 @@ class QueryProcessor:
 
             colnames.extend(["score", "min_frames"])
             cols.extend([round(np.mean(scores), 3), len(mfs_dets)])
-
+            
+            # mfs sweep 별로 파일이 따로 저장됨
+            # query 결과 저장 => score, min frame 등등 정보 저장
             df = pd.DataFrame([cols], columns=colnames)
             df.to_csv(results_fname, index=False)
             
+            # boggart 결과 저장 => bbox, count, binary 결과 저장
             boggart_results_fname = self.get_boggart_results_fname(chunk_start, query_segment_start)
             with open(boggart_results_fname, "w") as f:
                 json.dump([[r.tolist() for r in result] for result in return_dictionary["query_results"]], f)
@@ -372,7 +385,7 @@ class QueryProcessor:
             if get_results_df:
                 return df #, return_dictionary
             return return_dictionary
-
+        # ------------- binary & count -------------
         query_results_binary = [int(elem > 0) for elem in query_results]
         query_results_count = query_results
 

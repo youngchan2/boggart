@@ -1,7 +1,7 @@
 from ModelProcessor import ModelProcessor
 from VideoData import VideoData
 from utils import (calculate_bbox_accuracy, parallelize_update_dictionary)
-from bitrate_measure import (get_network_bytes, create_centroid_video)
+from create_mfs import (get_network_bytes, create_centroid_video)
 import numpy as np
 import pandas as pd
 import time

@@ -3,6 +3,8 @@ from operator import itemgetter
 import numpy as np
 import pandas as pd
 import os
+import shutil
+import cv2
 from tqdm import tqdm
 
 from configs import BackgroundConfig, TrajectoryConfig
@@ -29,8 +31,8 @@ class ClusteringPipelineEngine:
 
         self.total_frames_per_hour = 60 * 30
 
-        # self.mfs_sweep = [900, 450, 300, 200, 100, 50, 20, 10, 5, 2, 1, 0, -900, -300, -30, -10, -3, -2]
-        self.mfs_sweep = [self.query_seg_size]
+        self.mfs_sweep = [900, 450, 300, 200, 100, 50, 20, 10, 5, 2, 1, 0, -900, -300, -30, -10, -3, -2]
+        # self.mfs_sweep = [self.query_seg_size]
 
         self.all_vecs = None
         self._all_vecs = None
@@ -70,6 +72,36 @@ class ClusteringPipelineEngine:
             return vecs, df
 
         return vecs
+    
+    def _extract_mfs_by_sweep(self, hour, chunk_start_list, mfs_approach_list):
+        vd = VideoData(self.vid_label, hour)
+        cnt = 0
+        mfs_df = None
+
+        mfs_dir = f'mfs_result/{self.vid_label}/'
+        os.makedirs(mfs_dir, exist_ok=True)
+        
+        for i in range(0, len(chunk_start_list)):
+            chunk_start = chunk_start_list[i]
+            frame_generator = vd.get_frames_by_bounds(chunk_start, chunk_start+self.query_seg_size)
+
+            mfs_path = os.path.join(mfs_dir ,f'{chunk_start}_{mfs_approach_list[i]}.csv')
+
+            df = pd.read_csv(mfs_path)
+            mfs_df = pd.concat([mfs_df, df], ignore_index=True) if mfs_df is not None else df
+            frame_num_list = df.values.flatten().tolist()
+            for idx, frame in enumerate(frame_generator):
+                frame_num = idx + chunk_start
+                for n in frame_num_list:
+                    if frame_num == n:
+                        cnt += 1
+                        cv2.imwrite(f'min_frame/{self.vid_label}/frame_{frame_num:04d}.png', frame)
+        
+        if mfs_df is not None:
+            mfs_df.to_csv(f'mfs_result/{self.vid_label}{hour}.csv', index=False)
+            shutil.rmtree(mfs_dir)
+        print(f'cnt: {cnt}')
+
 
     def execute(self, hours, query_type, model, query_class, acc_target, percent_clusters, ioda, get_boggart_results=False):
         if type(hours) == int:
@@ -85,7 +117,7 @@ class ClusteringPipelineEngine:
         self.all_vecs = self._all_vecs.copy()
         self.all_dfs = self._all_dfs.copy()
 
-        n_clusters = max(6, int(percent_clusters * len(self.all_vecs)))
+        n_clusters = max(2, int(percent_clusters * len(self.all_vecs)))
         # centroid 결정
         _, clusters, centroids, _, _ = IngestTimeProcessing.cluster_profile(self.all_vecs.copy(), n_clusters=n_clusters)
         # print(f"all vecs: {self.all_vecs}")
@@ -142,8 +174,11 @@ class ClusteringPipelineEngine:
                 self.qp_sweep = None
                 _tempDF = list(map(itemgetter(1), sorted(c_sweep_res.items(), key=itemgetter(0))))
                 c_sweep_res = pd.concat(_tempDF).reset_index().drop(columns="index")
+                # c_sweep_res.to_csv('tempDF.csv', mode='a')
             
                 entire_df = pd.concat([entire_df, c_sweep_res.copy()]) if entire_df is not None else c_sweep_res
+                print('entire_df')
+                print(entire_df)
                 # mfs_approach값에 따른 score가 존재
                 # score < acc_target인것들 제거
                 c_sweep_res = c_sweep_res[c_sweep_res.score >= acc_target].sort_values(["hour", "seg_start"])
@@ -190,6 +225,13 @@ class ClusteringPipelineEngine:
             full_results = full_df
 
         print(full_results)
+
+        chunk_start_list = full_results['chunk_start'].tolist()
+        mfs_approach_list = full_results['mfs_approach'].tolist()
+
+        for h in hours:
+            self._extract_mfs_by_sweep(h, chunk_start_list, mfs_approach_list)
+
         score = np.round(full_results.score.mean(), 4)
 
         assert len(full_results) == len(self.all_dfs)
@@ -205,6 +247,7 @@ class ClusteringPipelineEngine:
         for _, row in full_results.sort_values(["hour", "chunk_start"]).iterrows():
             vd = VideoData(row.vid, row.hour)
             qp = QueryProcessor(query_type, vd, model,query_class, self.query_conf, row.mfs_approach, self.bg_conf, self.traj_conf, ioda, self.query_seg_size)
+            # 최종 결과를 만든 후에 chunk 별로 mfs_approach에 해당하는 boggart result 사용
             chunk_result = qp.load_boggart_results(row.chunk_start, row.seg_start)
             for frame_diff, frame_result in enumerate(chunk_result):
                 if query_type == "bbox":

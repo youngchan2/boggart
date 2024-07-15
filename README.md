@@ -118,10 +118,3 @@ cluster -> centroid frame에 대해 query 진행 (`ClusteringPipelineEngine.py`�
 `Reducto`
 temporla filtering: frame 간의 featrue difference value 사용 => threshold 넘는 frame만 filtering
 query type 별로 best feature, threshold value 존재 (static하게 결정)
-
-### video 길이가 짧은 경우
-- Clustering 문제
-1분짜리 영상 사용할 때 chunk size도 1800으로 해서 한 번에 처리하는 경우 clustering index 에러 났었음
-영상 길이에 따라 chunk size를 줄여 chunk가 여러개 나오도록 해야할듯
-
-- filtering하지 않는 `baseline_accuracy.py` 결과가 제대로 나오지 않음 (frame 수 부족?)

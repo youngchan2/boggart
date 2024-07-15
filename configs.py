@@ -1,7 +1,7 @@
 import os
 
 # location of boggart repository
-BOGGART_REPO_PATH = "/home/nvidia/boggart"
+BOGGART_REPO_PATH = "/home/chani/boggart"
 main_dir = f"{BOGGART_REPO_PATH}/data/"
 
 assert os.path.exists(BOGGART_REPO_PATH), "Update Boggart Repository Path in configs.py"
@@ -49,7 +49,7 @@ crops = {
         "bicycle" : [0, 0, 1920, 500],
         "truck" : [0, 0, 1920, 500]
     },
-    "auburn_first_angle60_crf23_kyc" : {
+    "auburn_qp36_ss16_50_kyc" : {
         "person" : [0, 0, 1920, 400],
         "car" : [0, 0, 1920, 500],
         "bicycle" : [0, 0, 1920, 500],
@@ -61,7 +61,37 @@ crops = {
         "bicycle" : [0, 0, 1920, 500],
         "truck" : [0, 0, 1920, 500]
     },
-    "auburn_ss2_crf23_kyc" : {
+    "jackson_ss19_15_kyc" : {
+        "person" : [0, 0, 1920, 400],
+        "car" : [0, 0, 1920, 500],
+        "bicycle" : [0, 0, 1920, 500],
+        "truck" : [0, 0, 1920, 500]
+    },
+    "auburn_ss13_kyc" : {
+        "person" : [0, 0, 1920, 400],
+        "car" : [0, 0, 1920, 500],
+        "bicycle" : [0, 0, 1920, 500],
+        "truck" : [0, 0, 1920, 500]
+    },
+    "auburn_ss16_kyc" : {
+        "person" : [0, 0, 1920, 400],
+        "car" : [0, 0, 1920, 500],
+        "bicycle" : [0, 0, 1920, 500],
+        "truck" : [0, 0, 1920, 500]
+    },
+    "auburn_ss3_45_kyc" : {
+        "person" : [0, 0, 1920, 400],
+        "car" : [0, 0, 1920, 500],
+        "bicycle" : [0, 0, 1920, 500],
+        "truck" : [0, 0, 1920, 500]
+    },
+    "auburn_ss16_50_kyc" : {
+        "person" : [0, 0, 1920, 400],
+        "car" : [0, 0, 1920, 500],
+        "bicycle" : [0, 0, 1920, 500],
+        "truck" : [0, 0, 1920, 500]
+    },
+    "auburn_qp36_ss16_kyc" : {
         "person" : [0, 0, 1920, 400],
         "car" : [0, 0, 1920, 500],
         "bicycle" : [0, 0, 1920, 500],
@@ -72,10 +102,13 @@ crops = {
 frame_bounds = {
     "auburn_first_angle_kyc": [1080, 1920],
     "auburn_first_angle10_kyc": [1080, 1920],
-    "auburn_first_angle10_crf23_kyc": [1080, 1920],
-    "auburn_first_angle60_crf23_kyc": [1080, 1920],
-    "auburn_ss2_kyc": [1080, 1920],
-    "auburn_ss2_crf23_kyc": [1080, 1920],
+    "auburn_qp36_ss16_50_kyc": [1080, 1920],
+    "jackson_ss19_15_kyc": [1080, 1920],
+    "auburn_ss13_kyc": [1080, 1920],
+    "auburn_ss16_kyc": [1080, 1920],
+    "auburn_ss3_45_kyc": [1080, 1920],
+    "auburn_ss16_50_kyc": [1080, 1920],
+    "auburn_qp36_ss16_kyc": [1080, 1920],
 }
 
 class BackgroundConfig:

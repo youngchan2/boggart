@@ -6,9 +6,14 @@ inference_results/
 centroid_frame_png/
 centroid_result/
 centroid_video/
+configs.py
+auburn_first_angle.mp4
+jackson_hole.mp4
 frame/
 inference_results/
 min_frame/
 models/
 mfs_result/
 mfs_video/
+bitrate/
+result/

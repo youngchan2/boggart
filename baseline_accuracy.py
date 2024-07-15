@@ -11,7 +11,6 @@ from utils import (
     calculate_binary_accuracy,
     parallelize_update_dictionary,
 )
-from bitrate_measure import (get_network_bytes, get_video_bitrate)
 import numpy as np
 import time
 import cv2
@@ -42,9 +41,9 @@ def accuracy(chunk_start):
     # print(f"chunk start {chunk_start}")
     scores = []
     rates = []
-    gt_bboxes = get_gt("auburn_first_angle_kyc", 10, "yolov5", chunk_start)
+    gt_bboxes = get_gt("auburn_ss16_kyc", 60, "yolov5", chunk_start)
 
-    det_bboxes = get_gt("auburn_first_angle60_crf23_kyc", 60, "yolov5", chunk_start)
+    det_bboxes = get_gt("auburn_qp36_ss16_kyc", 60, "yolov5", chunk_start)
     # print(f"gt:{gt_bboxes}")
     # print(f"dt:{det_bboxes}")
     # video_bitrate = encoding("auburn_first_angle_kyc", 10, chunk_start)
@@ -58,48 +57,10 @@ def accuracy(chunk_start):
     # return {"scores": scores}, {"rates": rates}
     return {"scores": scores}
 
-def encoding(video_name, hour, query_start, query_size = 150, fps = 30):
-    vd = VideoData(video_name, hour)
-    frame_generator = vd.get_frames_by_bounds(query_start, query_start+query_size)
-
-    output_video_dir = f'./baseline_encoding/'
-    os.makedirs(output_video_dir, exist_ok=True)
-
-    output_video_path = os.path.join(output_video_dir, f"baseline_{video_name}{query_start}.mp4")
-
-    temp_dir = './temp_frames/'
-    os.makedirs(temp_dir, exist_ok=True)
-
-    for idx, frame in enumerate(frame_generator):
-        frame_file = os.path.join(temp_dir, f'frame_{idx:04d}.png')
-        cv2.imwrite(frame_file, frame)
-
-    # command = ['ffmpeg',
-    #            '-framerate', str(fps),
-    #            '-i', frame_file,
-    #            '-c:v', 'libx264', '-pix_fmt', 'yuv420p',
-    #            output_video_path
-    #            ]
-    
-    # subprocess.run(command, check=True)
-    # shutil.rmtree(temp_dir)
-
-    bitrate = get_video_bitrate(output_video_path)
-    return bitrate
-
-
 total_scores = []
-total_rates = []
 # 모든 frame에 대해 query 진행
-start_bytes = get_network_bytes()
-start_time = time.time()
 
 scores_dict = parallelize_update_dictionary(accuracy, range(0, 1800, 150), max_workers=1, total_cpus=4)
-
-end_bytes = get_network_bytes()
-end_time = time.time()
-
-bitrate = ((end_bytes - start_bytes))
 
 for ts, score in scores_dict.items():
     total_scores.extend(score["scores"])
