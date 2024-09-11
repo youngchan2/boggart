@@ -41,7 +41,7 @@ class ModelProcessor:
         connect(self.video_data.db_vid, host="mango4.kaist.ac.kr",
             username='root',password='root',authentication_source='admin',connectTimeoutMS=10000, maxPoolSize=10000)
         for elem in Frame.objects(hour=self.video_data.hour, frame_no__in=range(start_frame, end_frame, int(30/self.fps))).order_by("+frame_no"):
-            inferenceResults = elem.inferenceResults[self.model]
+            inferenceResults = elem.inferenceResults[self.model]    # MongoDB에서 inference result(gt) 가져옴
             curr_counts = 0
             curr_boxes = []
             for score, pred_class, det in zip(inferenceResults.detection_scores, inferenceResults.detection_classes, inferenceResults.detection_boxes):

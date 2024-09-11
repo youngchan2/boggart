@@ -31,7 +31,7 @@ class ClusteringPipelineEngine:
 
         self.total_frames_per_hour = 60 * 30
 
-        self.mfs_sweep = [900, 450, 300, 200, 100, 50, 20, 10, 5, 2, 1, 0, -900, -300, -30, -10, -3, -2]
+        self.mfs_sweep = [150, 120, 90, 60, 30, 20, 10, 5, 2, 1, 0, -150, -120, -90, -60, -30, -10, -3, -2]
         # self.mfs_sweep = [self.query_seg_size]
 
         self.all_vecs = None
@@ -99,7 +99,7 @@ class ClusteringPipelineEngine:
         
         if mfs_df is not None:
             mfs_df.to_csv(f'mfs_result/{self.vid_label}{hour}.csv', index=False)
-            shutil.rmtree(mfs_dir)
+            # shutil.rmtree(mfs_dir)
         print(f'cnt: {cnt}')
 
 
@@ -163,6 +163,7 @@ class ClusteringPipelineEngine:
             for (_, (query_seg_start, chunk_start, hour, cluster)) in centroids_df.iterrows():
 
                 vd = VideoData(self.vid_label, hour)
+                # mfs: 전파 길이 => mfs_sweep list를 통해서 적절한 전파 길이 찾기
                 for mfs in self.mfs_sweep[mfs_sweep_index * sweep_chunk_length : (mfs_sweep_index + 1) * sweep_chunk_length]:
                     qp = QueryProcessor(query_type, vd, model, query_class, self.query_conf, mfs, self.bg_conf, self.traj_conf, ioda, self.query_seg_size)
                     centroid_qps.append([chunk_start, query_seg_start, qp])
@@ -170,15 +171,15 @@ class ClusteringPipelineEngine:
             # run query about centroid chunks
             if len(centroid_qps) > 0:
                 self.qp_sweep = centroid_qps
+                # c_sweep_res: centroid에 대한 쿼리 결과 => 각 전파 길이 별로 결과 확인 (acc_target 이상인 전파 길이만 사용 예정)
                 c_sweep_res = parallelize_update_dictionary(self._sweep_helper, range(len(centroid_qps)), total_cpus=4, max_workers=min(1, len(centroid_qps)))
                 self.qp_sweep = None
                 _tempDF = list(map(itemgetter(1), sorted(c_sweep_res.items(), key=itemgetter(0))))
                 c_sweep_res = pd.concat(_tempDF).reset_index().drop(columns="index")
                 # c_sweep_res.to_csv('tempDF.csv', mode='a')
-            
+                print("check approach by accuracy")
+                print(c_sweep_res)
                 entire_df = pd.concat([entire_df, c_sweep_res.copy()]) if entire_df is not None else c_sweep_res
-                print('entire_df')
-                print(entire_df)
                 # mfs_approach값에 따른 score가 존재
                 # score < acc_target인것들 제거
                 c_sweep_res = c_sweep_res[c_sweep_res.score >= acc_target].sort_values(["hour", "seg_start"])
@@ -201,6 +202,7 @@ class ClusteringPipelineEngine:
 
         assert len(full_df.merge(self.all_dfs, how='outer', on=["chunk_start", "seg_start", "hour", "cluster"], indicator=True).loc[lambda x : x['_merge']=='both'].loc[lambda x : x['mfs_approach_x'] != x['mfs_approach_y']]) == 0
 
+        # cluster 내 centroid 외의 chunk에 대해 쿼리 실행
         remaining_segments_df = full_df.merge(self.all_dfs, how='outer', on=["chunk_start", "seg_start", "hour", "cluster", "mfs_approach"], indicator=True).loc[lambda x : x['_merge']=='right_only'][["hour", "chunk_start", "seg_start", "mfs_approach", "cluster"]]
 
         remaining_qps = []
