@@ -8,7 +8,7 @@ import pandas as pd
 import csv
 
 # vid = "lausanne_pont_bassieres"
-vid = "auburn_ss16_50_kyc"
+vid = "auburn_ss16_10_kyc"
 hours = list(range(10, 11))
 chunk_size = 150
 query_seg_size = 150
@@ -19,8 +19,8 @@ query_seg_size = 150
 #     VideoData(vid, hr).check_vids()
 #     Experiment(vid = vid, hour = hr, chunk_size = chunk_size, query_seg_size = query_seg_size).run_ingest()
 
-# for hr in hours:
-#     Experiment(vid = vid, hour = hr, chunk_size = chunk_size, query_seg_size = query_seg_size).run_ingest()
+for hr in hours:
+    Experiment(vid = vid, hour = hr, chunk_size = chunk_size, query_seg_size = query_seg_size).run_ingest()
 
 # QUERY-TIME PROCESSING ###
 # This is done once per query
@@ -50,26 +50,26 @@ print(results_df)
 # slower: 더 느린 인코딩 속도.
 # veryslow: 가장 느린 인코딩 속도. 가장 좋은 압축 효율성.
 ######################################################################################
-presets = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow']
-preset_bitrate = []
-qp_preset_bitrate = []
+# presets = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow']
+# preset_bitrate = []
+# qp_preset_bitrate = []
 
-for preset in presets:
-    bitrate, time = create_mfs_video(vid, hours[0], fps=30, preset=preset)
-    qp_bitrate, qp_time = create_mfs_video(vid, hours[0], fps=30, preset=preset, qp=36)
-    preset_bitrate.append({'preset': preset, 'bitrate': bitrate, 'time': time})
-    qp_preset_bitrate.append({'preset': preset, 'bitrate': qp_bitrate, 'time': qp_time})
+# for preset in presets:
+#     bitrate, time = create_mfs_video(vid, hours[0], fps=30, preset=preset)
+#     qp_bitrate, qp_time = create_mfs_video(vid, hours[0], fps=30, preset=preset, qp=36)
+#     preset_bitrate.append({'preset': preset, 'bitrate': bitrate, 'time': time})
+#     qp_preset_bitrate.append({'preset': preset, 'bitrate': qp_bitrate, 'time': qp_time})
 
-bitrate_path = f'./bitrate/bitrate_{vid}{hours[0]}.csv'
-qp_bitrate_path = f'./bitrate/btirate_qp_{vid}{hours[0]}.csv'
+# bitrate_path = f'./bitrate/bitrate_{vid}{hours[0]}.csv'
+# qp_bitrate_path = f'./bitrate/btirate_qp_{vid}{hours[0]}.csv'
 
-df = pd.DataFrame(preset_bitrate)
-df = df.sort_values(by='bitrate', ascending=False)
-qp_df = pd.DataFrame(qp_preset_bitrate)
-qp_df = qp_df.sort_values(by='bitrate', ascending=False)
+# df = pd.DataFrame(preset_bitrate)
+# df = df.sort_values(by='bitrate', ascending=False)
+# qp_df = pd.DataFrame(qp_preset_bitrate)
+# qp_df = qp_df.sort_values(by='bitrate', ascending=False)
 
-df.to_csv(bitrate_path, index=False)
-qp_df.to_csv(qp_bitrate_path, index=False)
+# df.to_csv(bitrate_path, index=False)
+# qp_df.to_csv(qp_bitrate_path, index=False)
 
 # results_df.to_csv(f"results_{hours[0]}.csv", index=False)
 

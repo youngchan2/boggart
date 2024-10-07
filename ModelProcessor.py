@@ -38,7 +38,62 @@ class ModelProcessor:
 
         gt_boxes = []
         gt_counts = []
-        connect(self.video_data.db_vid, host="mango4.kaist.ac.kr",
+        connect(f"{self.video_data.db_vid}", host="mango4.kaist.ac.kr",
+            username='root',password='root',authentication_source='admin',connectTimeoutMS=10000, maxPoolSize=10000)
+        for elem in Frame.objects(hour=self.video_data.hour, frame_no__in=range(start_frame, end_frame, int(30/self.fps))).order_by("+frame_no"):
+            inferenceResults = elem.inferenceResults[self.model]    # MongoDB에서 inference result(gt) 가져옴
+            curr_counts = 0
+            curr_boxes = []
+            for score, pred_class, det in zip(inferenceResults.detection_scores, inferenceResults.detection_classes, inferenceResults.detection_boxes):
+                # type exchange
+                det = [float(x) for x in det]
+                
+                assert score <= 1
+                assert type(pred_class) is not float
+                
+                if score >= self.query_conf and pred_class == self.class_label:
+                    toss = False
+                    if self.crop_region is not None:
+                        # ensures no intersection
+                        toss = self.crop_region[0] <= det[0] <= self.crop_region[2] and self.crop_region[1] <= det[1] <= self.crop_region[3]
+                        toss = toss and (self.crop_region[0] <= det[2] <= self.crop_region[2] and self.crop_region[1] <= det[3] <= self.crop_region[3])
+                    if not toss:
+                        if get_conf:
+                            curr_boxes.append(det + [score])
+                        else:
+                            curr_boxes.append(det)
+                        curr_counts += 1
+            # print(f'numb {elem.frame_no} count {curr_counts}')
+            gt_boxes.append(curr_boxes)
+            gt_counts.append(curr_counts)
+
+        disconnect()
+
+        if counts_only:
+            return gt_counts
+
+        # TODO: just do this when loading dets in db first time
+        exec = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+        def clean(x):
+            if len(x) > 0:
+                x = np.array(x)
+                x[:,0:2] = np.clip(x[:, 0:2], a_min=0, a_max=None)
+                x[:,2] = np.clip(x[:, 2], a_min=0, a_max=self.bounds[1])
+                x[:,3] = np.clip(x[:, 3], a_min=0, a_max=self.bounds[0])
+                return x.tolist()
+            else:
+                return x
+        def f(i):
+            gt_boxes[i] = clean(gt_boxes[i])
+        # list(exec.map(f, range(len(gt_boxes)))) 
+
+        return gt_boxes, gt_counts
+    
+    def get_filtered_truth(self, start_frame, end_frame, counts_only=False, get_conf=False):
+
+        gt_boxes = []
+        gt_counts = []
+        connect(f"gt_{self.video_data.db_vid}", host="mango4.kaist.ac.kr",
             username='root',password='root',authentication_source='admin',connectTimeoutMS=10000, maxPoolSize=10000)
         for elem in Frame.objects(hour=self.video_data.hour, frame_no__in=range(start_frame, end_frame, int(30/self.fps))).order_by("+frame_no"):
             inferenceResults = elem.inferenceResults[self.model]    # MongoDB에서 inference result(gt) 가져옴

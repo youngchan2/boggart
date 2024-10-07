@@ -9,8 +9,7 @@ from tqdm import tqdm, trange
 
 from ut_tracker import Tracker
 from VideoData import VideoData, NoMoreVideo
-from configs import BackgroundConfig, TrajectoryConfig
-
+from configs import BackgroundConfig, TrajectoryConfig, BOGGART_REPO_PATH
 
 class IngestTimeProcessing:
 
@@ -146,7 +145,7 @@ class IngestTimeProcessing:
         if load:
             return [bg_max, bg_max2]
 
-    def get_foreground(self, bg_max, bg_max2, f):
+    def get_foreground(self, bg_max, bg_max2, f, num):
         h, w = f.shape
         f = cv2.resize(f, (int(w/self.bg_config.box_length), int(h/self.bg_config.box_length)))
         f = f.astype(np.uint8).flatten().reshape(-1,1)
@@ -157,6 +156,8 @@ class IngestTimeProcessing:
         result = result.reshape(int(h/self.bg_config.box_length), int(w/self.bg_config.box_length))
         result = cv2.resize(result, (w, h), interpolation=cv2.INTER_NEAREST).astype(np.uint8)
         result = cv2.medianBlur(result, self.traj_config.blur_amt)
+        path = f"{BOGGART_REPO_PATH}/fg/fg_{num:04d}.png"
+        cv2.imwrite(path, result)
         return result
 
 
@@ -209,7 +210,7 @@ class IngestTimeProcessing:
 
             o = f.copy()
 
-            result = self.get_foreground(bg_max, bg_max2, f)
+            result = self.get_foreground(bg_max, bg_max2, f, i)
 
             t.process_frame(result, o, save_ts=i)
             

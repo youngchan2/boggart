@@ -9,14 +9,15 @@ from db_model import DetectionResult, Frame
 from utils import parallelize_update_dictionary
 # from ground_truth_yolo import ml_model, video_name, hour, csv_path
 
-video_name = "auburn_ss2_crf23_kyc"
+video_name = "auburn_ss16_10_kyc"
 ml_model = "yolov5"
-hour = 60
+hour = 10
 csv_path = f"{BOGGART_REPO_PATH}/inference_results/{ml_model}/{video_name}/{video_name}{hour}.csv"
+gt_csv_path = f"{BOGGART_REPO_PATH}/new_gt/{video_name}/gt_{video_name}{hour}.csv"  # filtering detection result path
 
 def exec(frame_start, num_frames=900):
     db = connect(
-            db=video_name,
+            db=f"gt_{video_name}",
             username='root',
             password='root',
             host='mango4.kaist.ac.kr',
@@ -24,7 +25,7 @@ def exec(frame_start, num_frames=900):
             port=27017,
             maxPoolSize=10000)
 
-    df = pd.read_csv(csv_path, skiprows=1,names=["frame", "x1", "y1", "x2", "y2", "label", "conf"], dtype=str)
+    df = pd.read_csv(gt_csv_path, skiprows=1,names=["frame", "x1", "y1", "x2", "y2", "label", "conf"], dtype=str)
     df['frame'] = df['frame'].astype(float).astype(int)
     df['conf'] = df['conf'].astype(float)
     # print(df['frame'])

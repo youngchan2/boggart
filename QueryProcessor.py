@@ -302,6 +302,7 @@ class QueryProcessor:
             return None
         # ground truth 값 가져옴 => 아래에서 accuracy 계산하기 위해
         gt_bboxes, gt_counts = self.modelProcessor.get_ground_truth(query_segment_start, query_segment_start + self.query_segment_size)
+        mfs_bboxes, mfs_counts = self.modelProcessor.get_filtered_truth(query_segment_start, query_segment_start + self.query_segment_size)
         return_dictionary["gt_bboxes"] = gt_bboxes
         # print(f"gt bboxes:{gt_bboxes}")
 
@@ -315,7 +316,12 @@ class QueryProcessor:
         if no_tracking:
             # get middle frame
             min_frames_set = [query_segment_start + int(self.query_segment_size/2/(30/self.fps))]
-            mfs_dets = [(frame_no, gt_bboxes[int((frame_no-query_segment_start) * self.fps/30)]) for frame_no in min_frames_set]
+            mfs_dets = [(frame_no, mfs_bboxes[int((frame_no-query_segment_start) * self.fps/30)]) for frame_no in min_frames_set]   # 필터링 프레임에 대한 db 사용
+            # mfs_dets = [(frame_no, gt_bboxes[int((frame_no-query_segment_start) * self.fps/30)]) for frame_no in min_frames_set]  # 원본 프레임에 대한 db 사용 (원래 코드)
+            # mfs_dets = [(frame_no, gt_bboxes[min_frames_set.index(frame_no)]) for frame_no in list(min_frames_set)]
+            # mfs_dets = []
+            # for idx, frame_no in enumerate(sorted(min_frames_set)):
+            #     mfs_dets.append((frame_no, idx))
             return_dictionary["mfs_size"] = len(mfs_dets)
             if self.query_type in ["count", "binary"]:
                 curr_result = len(mfs_dets[0][1])
@@ -336,7 +342,12 @@ class QueryProcessor:
 
             self._save_mfs_by_sweep(min_frames_set, query_segment_start)
 
-            mfs_dets = [(frame_no, gt_bboxes[int((frame_no-query_segment_start) * self.fps/30)]) for frame_no in min_frames_set]
+            mfs_dets = [(frame_no, mfs_bboxes[int((frame_no-query_segment_start) * self.fps/30)]) for frame_no in min_frames_set]
+            # mfs_dets = [(frame_no, gt_bboxes[int((frame_no-query_segment_start) * self.fps/30)]) for frame_no in min_frames_set]  # 원본 프레임에 대한 db 사용
+            # mfs_dets = [(frame_no, gt_bboxes[min_frames_set.index(frame_no)]) for frame_no in list(min_frames_set)]
+            # mfs_dets = []
+            # for idx, frame_no in enumerate(sorted(min_frames_set)):
+            #     mfs_dets.append((frame_no, gt_bboxes[idx]))
             return_dictionary["mfs_size"] = len(mfs_dets)
 
             assert len(mfs_dets) > 0

@@ -101,6 +101,8 @@ sudo mongod --config /etc/mongodb.conf
 Then, update `ml_model`, `video_name` and `hour` in  `load_detections_into_mongodb.py`. Running this script will then load that hour's worth of inference results into the database.
 
 ### Run Boggart
+Run `Detection.py` first for ground truth
+Run `load_detections_into_mongodb.py` to upload the groudn truth into mongodb
 Instructions to execute Boggart's ahead-of-time and query-time processing can be found in `run.py`.
 
 ### 방식

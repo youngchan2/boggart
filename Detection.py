@@ -12,8 +12,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = torch.hub.load("ultralytics/yolov5", "yolov5n").to(device)
 
 ml_model = "yolov5"
-video_name = "auburn_ss2_crf23_kyc"
-hour = 60
+video_name = "auburn_ss21_30_kyc"
+hour =10
 csv_location = f"{BOGGART_REPO_PATH}/inference_results/{ml_model}/{video_name}/{video_name}{hour}.csv"
 
 
@@ -69,8 +69,8 @@ def execute(ingest_combos, vid, chunk_size):
         data_frame.to_csv(csv_location, mode="a", header=False, index=False)
 
 if __name__ == "__main__":
-    vid = "auburn_ss2_crf23_kyc"
-    hour = 60
+    vid = "auburn_ss21_30_kyc"
+    hour = 10
     chunk_size = 150
     query_seg_size = 150
 
